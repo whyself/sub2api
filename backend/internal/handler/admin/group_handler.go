@@ -136,11 +136,12 @@ func (h *GroupHandler) rejectUnsupportedSimpleModeOperation(c *gin.Context, oper
 }
 
 type simpleModeGroupResponse struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Platform    string `json:"platform"`
-	Status      string `json:"status"`
+	AllowMessagesDispatch bool   `json:"allow_messages_dispatch,omitempty"`
+	ID                    int64  `json:"id"`
+	Name                  string `json:"name"`
+	Description           string `json:"description"`
+	Platform              string `json:"platform"`
+	Status                string `json:"status"`
 
 	AccountCount            int64     `json:"account_count,omitempty"`
 	ActiveAccountCount      int64     `json:"active_account_count,omitempty"`
@@ -155,7 +156,8 @@ func groupForSimpleMode(group *service.Group) *simpleModeGroupResponse {
 		return nil
 	}
 	return &simpleModeGroupResponse{
-		ID: group.ID, Name: group.Name, Description: group.Description, Platform: group.Platform,
+		AllowMessagesDispatch: group.AllowMessagesDispatch,
+		ID:                    group.ID, Name: group.Name, Description: group.Description, Platform: group.Platform,
 		Status:             group.Status,
 		AccountCount:       group.AccountCount,
 		ActiveAccountCount: group.ActiveAccountCount, RateLimitedAccountCount: group.RateLimitedAccountCount,

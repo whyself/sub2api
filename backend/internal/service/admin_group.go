@@ -390,6 +390,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	}
 	if s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
 		normalizeCreateGroupInputForSimpleMode(input)
+		// 个人模式不展示调度开关，原生 Qoder 分组默认提供消息协议转换。
+		if NormalizeGroupPlatform(input.Platform) == PlatformQoder {
+			input.AllowMessagesDispatch = true
+		}
 	}
 	if input.RateMultiplier <= 0 {
 		return nil, errors.New("rate_multiplier must be > 0")
@@ -765,6 +769,10 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
 		normalizeUpdateGroupInputForSimpleMode(input)
+		if group.Platform == PlatformQoder {
+			enabled := true
+			input.AllowMessagesDispatch = &enabled
+		}
 	}
 
 	// 渠道缓存里存了 groupID → platform 的映射，改了平台要让它失效（见函数末尾）
