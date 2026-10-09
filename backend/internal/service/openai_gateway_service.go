@@ -442,6 +442,7 @@ var ErrNoAvailableCompactAccounts = errors.New("no available accounts support /r
 
 // OpenAIGatewayService handles OpenAI API gateway operations
 type OpenAIGatewayService struct {
+	qoderService          *QoderService
 	accountRepo           AccountRepository
 	usageLogRepo          UsageLogRepository
 	usageBillingRepo      UsageBillingRepository
@@ -1201,6 +1202,16 @@ func hashSensitiveValueForLog(raw string) string {
 
 // GetAccessToken gets the access token for an OpenAI account
 func (s *OpenAIGatewayService) GetAccessToken(ctx context.Context, account *Account) (string, string, error) {
+	if account.IsQoder() {
+		if s.qoderService == nil {
+			return "", "", errors.New("Qoder 令牌服务未配置")
+		}
+		fresh, err := s.qoderService.CurrentAccount(ctx, account, false)
+		if err != nil {
+			return "", "", err
+		}
+		return fresh.GetCredential("access_token"), "oauth", nil
+	}
 	if account.IsShadow() {
 		credAccount, err := resolveCredentialAccount(ctx, s.accountRepo, account)
 		if err != nil {

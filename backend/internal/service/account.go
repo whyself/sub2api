@@ -1353,7 +1353,11 @@ func (a *Account) IsOpenAIOAuthLike() bool {
 // UsesOpenAICodexProtocol preserves legacy OpenAI gateway OAuth routing for
 // accounts whose platform is implicit, while adding OpenAI SetupToken.
 func (a *Account) UsesOpenAICodexProtocol() bool {
-	return a != nil && (a.Type == AccountTypeOAuth || a.IsOpenAIOAuthLike())
+	return a != nil && !a.IsQoder() && (a.Type == AccountTypeOAuth || a.IsOpenAIOAuthLike())
+}
+
+func (a *Account) IsQoder() bool {
+	return a != nil && a.Platform == PlatformQoder && a.Type == AccountTypeOAuth
 }
 
 func (a *Account) IsOpenAIChatGPTSubscription() bool {
@@ -1775,6 +1779,9 @@ func (a *Account) GetOpenAISessionID() string {
 func (a *Account) SupportsOpenAIEndpointCapability(capability OpenAIEndpointCapability) bool {
 	if a == nil {
 		return false
+	}
+	if a.IsQoder() {
+		return capability == "" || capability == OpenAIEndpointCapabilityChatCompletions
 	}
 	if capability == OpenAIEndpointCapabilitySeedance {
 		configured, _ := a.openAIEndpointCapabilitySet()

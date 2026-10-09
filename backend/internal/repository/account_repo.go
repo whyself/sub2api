@@ -1596,6 +1596,20 @@ func (r *accountRepository) UpdateGrokOAuthCredentialsIfUnchanged(
 	expectedProxyID *int64,
 	credentials map[string]any,
 ) (bool, error) {
+	return r.updateProviderOAuthCredentialsIfUnchanged(ctx, id, expectedCredentials, expectedProxyID, credentials, service.PlatformGrok, false)
+}
+
+// UpdateQoderOAuthCredentialsIfUnchanged 让续期和重新授权共享完整凭证及代理的条件更新。
+func (r *accountRepository) UpdateQoderOAuthCredentialsIfUnchanged(ctx context.Context, id int64, expectedCredentials map[string]any, expectedProxyID *int64, credentials map[string]any) (bool, error) {
+	return r.updateProviderOAuthCredentialsIfUnchanged(ctx, id, expectedCredentials, expectedProxyID, credentials, service.PlatformQoder, false)
+}
+
+// ReauthorizeQoderOAuthCredentialsIfUnchanged 在明确重新授权后恢复凭证错误状态，保留人工停用状态。
+func (r *accountRepository) ReauthorizeQoderOAuthCredentialsIfUnchanged(ctx context.Context, id int64, expected map[string]any, proxyID *int64, credentials map[string]any) (bool, error) {
+	return r.updateProviderOAuthCredentialsIfUnchanged(ctx, id, expected, proxyID, credentials, service.PlatformQoder, true)
+}
+
+func (r *accountRepository) updateProviderOAuthCredentialsIfUnchanged(ctx context.Context, id int64, expectedCredentials map[string]any, expectedProxyID *int64, credentials map[string]any, platform string, reauthorize bool) (bool, error) {
 	if r == nil || r.sql == nil {
 		return false, errors.New("account repository SQL executor is not configured")
 	}
@@ -1607,11 +1621,15 @@ func (r *accountRepository) UpdateGrokOAuthCredentialsIfUnchanged(
 	if err != nil {
 		return false, err
 	}
+	stateAssignments := ""
+	if reauthorize {
+		stateAssignments = ", status = CASE WHEN a.status = 'error' THEN 'active' ELSE a.status END, error_message = CASE WHEN a.status = 'error' THEN NULL ELSE a.error_message END, schedulable = CASE WHEN a.status = 'error' THEN TRUE ELSE a.schedulable END, temp_unschedulable_until = CASE WHEN a.temp_unschedulable_reason LIKE 'token refresh%' THEN NULL ELSE a.temp_unschedulable_until END, temp_unschedulable_reason = CASE WHEN a.temp_unschedulable_reason LIKE 'token refresh%' THEN NULL ELSE a.temp_unschedulable_reason END"
+	}
 	result, err := r.sql.ExecContext(ctx, `
 		WITH updated AS (
 		UPDATE accounts AS a
 		SET credentials = $1::jsonb,
-			updated_at = NOW()
+			updated_at = NOW()`+stateAssignments+`
 		WHERE a.id = $2
 			AND a.deleted_at IS NULL
 			AND a.platform = $3
@@ -1625,7 +1643,7 @@ func (r *accountRepository) UpdateGrokOAuthCredentialsIfUnchanged(
 	`,
 		string(credentialsJSON),
 		id,
-		service.PlatformGrok,
+		platform,
 		service.AccountTypeOAuth,
 		string(expectedJSON),
 		expectedProxyID,
@@ -1656,6 +1674,14 @@ func (r *accountRepository) SetGrokOAuthRefreshErrorIfCredentialsUnchanged(
 	expectedProxyID *int64,
 	errorMsg string,
 ) (bool, error) {
+	return r.setProviderOAuthRefreshErrorIfCredentialsUnchanged(ctx, id, expectedCredentials, expectedProxyID, errorMsg, service.PlatformGrok)
+}
+
+func (r *accountRepository) SetQoderOAuthRefreshErrorIfCredentialsUnchanged(ctx context.Context, id int64, expectedCredentials map[string]any, expectedProxyID *int64, errorMsg string) (bool, error) {
+	return r.setProviderOAuthRefreshErrorIfCredentialsUnchanged(ctx, id, expectedCredentials, expectedProxyID, errorMsg, service.PlatformQoder)
+}
+
+func (r *accountRepository) setProviderOAuthRefreshErrorIfCredentialsUnchanged(ctx context.Context, id int64, expectedCredentials map[string]any, expectedProxyID *int64, errorMsg string, platform string) (bool, error) {
 	if r == nil || r.sql == nil {
 		return false, errors.New("account repository SQL executor is not configured")
 	}
@@ -1685,7 +1711,7 @@ func (r *accountRepository) SetGrokOAuthRefreshErrorIfCredentialsUnchanged(
 		service.StatusError,
 		errorMsg,
 		id,
-		service.PlatformGrok,
+		platform,
 		service.AccountTypeOAuth,
 		service.StatusActive,
 		string(expectedJSON),
@@ -1717,6 +1743,14 @@ func (r *accountRepository) SetGrokOAuthRefreshTempUnschedulableIfCredentialsUnc
 	until time.Time,
 	reason string,
 ) (bool, error) {
+	return r.setProviderOAuthRefreshTempUnschedulableIfCredentialsUnchanged(ctx, id, expectedCredentials, expectedProxyID, until, reason, service.PlatformGrok)
+}
+
+func (r *accountRepository) SetQoderOAuthRefreshTempUnschedulableIfCredentialsUnchanged(ctx context.Context, id int64, expectedCredentials map[string]any, expectedProxyID *int64, until time.Time, reason string) (bool, error) {
+	return r.setProviderOAuthRefreshTempUnschedulableIfCredentialsUnchanged(ctx, id, expectedCredentials, expectedProxyID, until, reason, service.PlatformQoder)
+}
+
+func (r *accountRepository) setProviderOAuthRefreshTempUnschedulableIfCredentialsUnchanged(ctx context.Context, id int64, expectedCredentials map[string]any, expectedProxyID *int64, until time.Time, reason string, platform string) (bool, error) {
 	if r == nil || r.sql == nil {
 		return false, errors.New("account repository SQL executor is not configured")
 	}
@@ -1746,7 +1780,7 @@ func (r *accountRepository) SetGrokOAuthRefreshTempUnschedulableIfCredentialsUnc
 		until,
 		reason,
 		id,
-		service.PlatformGrok,
+		platform,
 		service.AccountTypeOAuth,
 		service.StatusActive,
 		string(expectedJSON),

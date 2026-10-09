@@ -270,6 +270,9 @@ func (s *OpenAIGatewayService) forwardAsRawChatCompletions(
 }
 
 func (s *OpenAIGatewayService) rawChatCompletionsURL(account *Account) (string, error) {
+	if account.IsQoder() {
+		return "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation", nil
+	}
 	if account.Platform == PlatformGrok {
 		targetURL, err := buildGrokChatCompletionsURL(account, s.cfg, s.settingService)
 		if err != nil {

@@ -725,6 +725,22 @@ func normalizeModelRegistryBaseURL(raw string) string {
 }
 
 func (s *AccountTestService) fetchUpstreamModelList(ctx context.Context, account *Account) ([]string, []byte, error) {
+	if account != nil && account.IsQoder() {
+		if s.qoderService == nil {
+			return nil, nil, newUpstreamModelSyncConfigError("Qoder 模型服务未配置", nil)
+		}
+		models, err := s.qoderService.Models(ctx, account)
+		if err != nil {
+			return nil, nil, err
+		}
+		names := make([]string, 0, len(models))
+		for _, model := range models {
+			if model.Enabled {
+				names = append(names, model.ID())
+			}
+		}
+		return names, nil, nil
+	}
 	if s == nil {
 		return nil, nil, newUpstreamModelSyncConfigError("Account test service is not configured", nil)
 	}

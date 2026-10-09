@@ -293,14 +293,21 @@ func (api *OAuthRefreshAPI) RefreshIfNeeded(
 	// 5. 设置版本号 + 更新 DB
 	if newCredentials != nil {
 		newCredentials["_token_version"] = time.Now().UnixMilli()
-		if freshAccount.IsGrokOAuth() {
-			conditionalRepo, ok := api.accountRepo.(GrokOAuthRefreshSuccessRepository)
-			if !ok {
+		if freshAccount.IsGrokOAuth() || freshAccount.IsQoder() {
+			var conditionalUpdate func(context.Context, int64, map[string]any, *int64, map[string]any) (bool, error)
+			if freshAccount.IsQoder() {
+				if repo, ok := api.accountRepo.(QoderCredentialRepository); ok {
+					conditionalUpdate = repo.UpdateQoderOAuthCredentialsIfUnchanged
+				}
+			} else if repo, ok := api.accountRepo.(GrokOAuthRefreshSuccessRepository); ok {
+				conditionalUpdate = repo.UpdateGrokOAuthCredentialsIfUnchanged
+			}
+			if conditionalUpdate == nil {
 				return nil, &providerConfigurationRefreshError{
 					err: fmt.Errorf("grok OAuth refresh success CAS repository is not configured"),
 				}
 			}
-			applied, updateErr := conditionalRepo.UpdateGrokOAuthCredentialsIfUnchanged(
+			applied, updateErr := conditionalUpdate(
 				ctx,
 				freshAccount.ID,
 				attemptedAccount.Credentials,
