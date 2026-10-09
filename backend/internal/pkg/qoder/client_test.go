@@ -106,3 +106,24 @@ func TestQoderZeroSeedIsExplicitlyRejected(t *testing.T) {
 		t.Fatal("seed=0 被静默丢弃")
 	}
 }
+
+func TestQoderNonePreservesToolHistoryAndRejectsNewCalls(t *testing.T) {
+	request := []byte(`{"tool_choice":"none","tools":[{"type":"function","function":{"name":"weather","parameters":{"type":"object"}}}],"messages":[{"role":"assistant","tool_calls":[{"id":"历史调用","type":"function","function":{"name":"weather","arguments":"{}"}}]},{"role":"tool","tool_call_id":"历史调用","content":"23 摄氏度"}]}`)
+	body, err := PrepareChat(request, Model{Key: "测试模型"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	constraint, err := ApplyToolConstraint(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(body["tools"].([]any)) != 1 || len(body["messages"].([]any)) != 3 {
+		t.Fatal("工具结果历史或对应定义被丢弃")
+	}
+	if !constraint.Buffered || constraint.Validate(&Collector{Content: "23 摄氏度"}) != nil {
+		t.Fatal("禁止工具调用应缓冲并接受普通结果")
+	}
+	if constraint.Validate(&Collector{Tools: map[int]*ToolCall{0: {Name: "weather"}}}) == nil {
+		t.Fatal("禁止工具调用时不能回传新调用")
+	}
+}

@@ -58,7 +58,7 @@ func ApplyToolConstraint(body map[string]any) (ToolConstraint, error) {
 	switch c.Choice {
 	case "auto":
 	case "none":
-		delete(body, "tools")
+		// 工具结果历史仍需对应定义；保留定义，使用指令和结果校验禁止新调用。
 		instruction = "本次回答禁止发起工具调用，请根据已有信息直接回答。"
 	case "required":
 		if len(tools) == 0 {
