@@ -460,6 +460,11 @@
       </div>
 
       <!-- Account Type Selection (Grok) -->
+      <div v-if="form.platform === 'qoder'" class="rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/20">
+        <div class="flex items-center gap-2 font-medium text-gray-900 dark:text-white"><PlatformIcon platform="qoder" size="sm" /><span>Qoder OAuth</span></div>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">{{ t('admin.accounts.qoder.description') }}</p>
+      </div>
+
       <div v-if="form.platform === 'grok'">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
         <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2" data-tour="account-form-type">
