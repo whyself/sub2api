@@ -423,6 +423,10 @@ func PrepareChat(raw []byte, model Model) (map[string]any, error) {
 		default:
 			return nil, &Error{400, "消息角色不受支持"}
 		}
+		// 标准协议允许省略纯工具消息的正文，Qoder 仍要求显式传入空字符串。
+		if calls, ok := m["tool_calls"].([]any); m["role"] == "assistant" && ok && len(calls) > 0 && m["content"] == nil {
+			m["content"] = ""
+		}
 		converted = append(converted, m)
 	}
 	parameters := map[string]any{"max_tokens": 4096}

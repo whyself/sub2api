@@ -127,3 +127,21 @@ func TestQoderNonePreservesToolHistoryAndRejectsNewCalls(t *testing.T) {
 		t.Fatal("禁止工具调用时不能回传新调用")
 	}
 }
+
+func TestQoderToolHistoryHasExplicitEmptyContent(t *testing.T) {
+	for _, content := range []string{"", `"content":null,`} {
+		request := []byte(`{"messages":[{"role":"assistant",` + content + `"reasoning_content":"已有推理","tool_calls":[{"id":"历史调用","type":"function","function":{"name":"weather","arguments":"{}"}}]},{"role":"tool","tool_call_id":"历史调用","content":"23 摄氏度"}]}`)
+		body, err := PrepareChat(request, Model{Key: "测试模型"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		messages := body["messages"].([]any)
+		assistant := messages[0].(map[string]any)
+		if assistant["content"] != "" || assistant["reasoning_content"] != "已有推理" || len(assistant["tool_calls"].([]any)) != 1 {
+			t.Fatal("工具消息正文归一化丢失了推理或调用信息")
+		}
+		if messages[1].(map[string]any)["content"] != "23 摄氏度" {
+			t.Fatal("工具结果被改写")
+		}
+	}
+}
