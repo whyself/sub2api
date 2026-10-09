@@ -61,6 +61,9 @@ func RegisterAdminRoutes(
 		// Grok OAuth
 		registerGrokOAuthRoutes(admin, h)
 		if h.Admin.QoderOAuth != nil {
+			credits := admin.Group("/qoder/credits/accounts")
+			credits.GET("", h.Admin.QoderOAuth.CreditsAccounts)
+			credits.GET("/:id", h.Admin.QoderOAuth.AccountCredits)
 			qoder := admin.Group("/qoder/oauth")
 			qoder.POST("/start", h.Admin.QoderOAuth.Begin)
 			qoder.POST("/poll", h.Admin.QoderOAuth.Poll)

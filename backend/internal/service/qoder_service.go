@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/qoder"
+	"golang.org/x/sync/singleflight"
 )
 
 type QoderCredentialRepository interface {
@@ -68,11 +69,13 @@ type QoderService struct {
 	sessions      map[string]*qoderLoginSession
 	clients       map[string]*qoder.Client
 	models        map[string]qoderModelsCache
+	credits       map[string]qoderCreditsCache
+	creditsFlight singleflight.Group
 	clientFactory func(string) (*qoder.Client, error)
 }
 
 func NewQoderService(accounts AccountRepository, proxies ProxyRepository, refreshAPI *OAuthRefreshAPI) *QoderService {
-	return &QoderService{accountRepo: accounts, proxyRepo: proxies, refreshAPI: refreshAPI, sessions: make(map[string]*qoderLoginSession), clients: make(map[string]*qoder.Client), models: make(map[string]qoderModelsCache), clientFactory: qoder.NewClient}
+	return &QoderService{accountRepo: accounts, proxyRepo: proxies, refreshAPI: refreshAPI, sessions: make(map[string]*qoderLoginSession), clients: make(map[string]*qoder.Client), models: make(map[string]qoderModelsCache), credits: make(map[string]qoderCreditsCache), clientFactory: qoder.NewClient}
 }
 func (s *QoderService) Stop() {
 	s.mu.Lock()
