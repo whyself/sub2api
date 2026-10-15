@@ -1184,6 +1184,16 @@ func (s *RateLimitService) handleCustomErrorCode(ctx context.Context, account *A
 // handle429 处理429限流错误
 // 解析响应头获取重置时间，标记账号为限流状态
 func (s *RateLimitService) handle429(ctx context.Context, account *Account, headers http.Header, responseBody []byte) {
+	if account != nil && account.IsQoder() {
+		now := time.Now()
+		if resetAt := parseRetryAfterResetTime(headers, now); resetAt != nil && resetAt.After(now) {
+			s.notifyAccountSchedulingBlocked(account, *resetAt, "429")
+			if err := s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt); err != nil {
+				slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+			}
+			return
+		}
+	}
 	// OpenAI OAuth stays on the same account for the gateway's bounded retry
 	// window. Persisting a rate-limit reset on the first 429 would make the next
 	// retry ineligible and silently turn same-account recovery into a switch.

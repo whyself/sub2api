@@ -158,6 +158,18 @@ func qoderHTTPError(err error) *http.Response {
 	if provider != nil {
 		message = provider.Message
 	}
-	raw, _ := json.Marshal(map[string]any{"error": map[string]any{"type": "qoder_upstream_error", "message": message}})
-	return &http.Response{StatusCode: status, Header: http.Header{"Content-Type": {"application/json"}}, Body: io.NopCloser(bytes.NewReader(raw)), ContentLength: int64(len(raw))}
+	headers := http.Header{"Content-Type": {"application/json"}}
+	detail := map[string]any{"type": "qoder_upstream_error", "message": message}
+	var limited *qoder.RateLimitError
+	if errors.As(err, &limited) {
+		detail["type"] = "rate_limit_error"
+		if limited.Code != "" {
+			detail["code"] = limited.Code
+		}
+		if limited.RetryAfter != "" {
+			headers.Set("Retry-After", limited.RetryAfter)
+		}
+	}
+	raw, _ := json.Marshal(map[string]any{"error": detail})
+	return &http.Response{StatusCode: status, Header: headers, Body: io.NopCloser(bytes.NewReader(raw)), ContentLength: int64(len(raw))}
 }

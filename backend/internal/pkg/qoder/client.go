@@ -467,6 +467,9 @@ func Unwrap(payload []byte) (map[string]any, bool, error) {
 			status, _ = strconv.Atoi(v)
 		}
 		if status != 200 {
+			if err := queueError(wrapper); err != nil {
+				return nil, false, err
+			}
 			return nil, false, &Error{status, fmt.Sprintf("Qoder 流内返回错误状态 %d", status)}
 		}
 	}
@@ -487,6 +490,9 @@ func Unwrap(payload []byte) (map[string]any, bool, error) {
 		}
 	}
 	if code := inner["code"]; code != nil && code != "" && code != "0" && code != float64(0) {
+		if err := queueError(wrapper); err != nil {
+			return nil, false, err
+		}
 		status := 502
 		if fmt.Sprint(code) == "12153" || fmt.Sprint(code) == "TOKEN_EXPIRE" {
 			status = 401
@@ -582,6 +588,9 @@ func (c *Client) ChatStream(ctx context.Context, credentials Credentials, body m
 	}
 	defer response.Body.Close()
 	if response.StatusCode != 200 {
+		if response.StatusCode == http.StatusTooManyRequests {
+			return &RateLimitError{Message: "Qoder 请求受限，请稍后重试", RetryAfter: retryAfter(response.Header.Get("Retry-After"))}
+		}
 		return &Error{response.StatusCode, fmt.Sprintf("聊天接口返回 HTTP %d", response.StatusCode)}
 	}
 	return ReadChunks(response.Body, emit)
