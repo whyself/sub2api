@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+state.json
+.state.lock
+state.*.tmp
+refresh-response.json
+*.token
+data/
+local-data/
+*.log

@@ -514,6 +514,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/subscription-quota',
+    name: 'AdminSubscriptionQuota',
+    component: () => import('@/views/admin/SubscriptionQuotaView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: '订阅额度',
+      titleKey: 'admin.subscriptionQuota.title',
+      descriptionKey: 'admin.subscriptionQuota.description'
+    }
+  },
+  {
     path: '/admin/accounts',
     name: 'AdminAccounts',
     component: () => import('@/views/admin/AccountsView.vue'),

@@ -985,7 +985,7 @@ func (s *TokenRefreshService) refreshWithRetryWithRateGate(
 		// 不可重试错误（invalid_grant/invalid_client 等）直接标记 error 状态并返回
 		if isNonRetryableRefreshError(err) {
 			errorMsg := "Token refresh failed (non-retryable): " + logredact.RedactText(err.Error())
-			isGrokOAuth := account.IsGrokOAuth()
+			isGrokOAuth := account.IsGrokOAuth() || account.IsQoder()
 			if !isGrokOAuth {
 				s.notifyAccountSchedulingBlocked(account, time.Time{}, "token_refresh_non_retryable")
 			}
@@ -993,13 +993,23 @@ func (s *TokenRefreshService) refreshWithRetryWithRateGate(
 			persistentlyBlocked := false
 			var setErr error
 			if isGrokOAuth {
-				conditionalRepo, ok := s.accountRepo.(GrokOAuthRefreshMutationRepository)
+				var mutation func(context.Context, int64, map[string]any, *int64, string) (bool, error)
+				if account.IsQoder() {
+					if repo, ok := s.accountRepo.(interface {
+						SetQoderOAuthRefreshErrorIfCredentialsUnchanged(context.Context, int64, map[string]any, *int64, string) (bool, error)
+					}); ok {
+						mutation = repo.SetQoderOAuthRefreshErrorIfCredentialsUnchanged
+					}
+				} else if repo, ok := s.accountRepo.(GrokOAuthRefreshMutationRepository); ok {
+					mutation = repo.SetGrokOAuthRefreshErrorIfCredentialsUnchanged
+				}
+				ok := mutation != nil
 				if !ok {
 					return &providerConfigurationRefreshError{
 						err: errors.New("grok OAuth conditional refresh mutation repository is not configured"),
 					}
 				} else {
-					persistentlyBlocked, setErr = conditionalRepo.SetGrokOAuthRefreshErrorIfCredentialsUnchanged(
+					persistentlyBlocked, setErr = mutation(
 						ctx,
 						account.ID,
 						account.Credentials,
@@ -1087,14 +1097,24 @@ func (s *TokenRefreshService) refreshWithRetryWithRateGate(
 	if lastErr != nil {
 		reason += ": " + logredact.RedactText(lastErr.Error())
 	}
-	if account.IsGrokOAuth() {
-		conditionalRepo, ok := s.accountRepo.(GrokOAuthRefreshMutationRepository)
+	if account.IsGrokOAuth() || account.IsQoder() {
+		var mutation func(context.Context, int64, map[string]any, *int64, time.Time, string) (bool, error)
+		if account.IsQoder() {
+			if repo, ok := s.accountRepo.(interface {
+				SetQoderOAuthRefreshTempUnschedulableIfCredentialsUnchanged(context.Context, int64, map[string]any, *int64, time.Time, string) (bool, error)
+			}); ok {
+				mutation = repo.SetQoderOAuthRefreshTempUnschedulableIfCredentialsUnchanged
+			}
+		} else if repo, ok := s.accountRepo.(GrokOAuthRefreshMutationRepository); ok {
+			mutation = repo.SetGrokOAuthRefreshTempUnschedulableIfCredentialsUnchanged
+		}
+		ok := mutation != nil
 		if !ok {
 			return &providerConfigurationRefreshError{
 				err: errors.New("grok OAuth conditional refresh mutation repository is not configured"),
 			}
 		}
-		applied, setErr := conditionalRepo.SetGrokOAuthRefreshTempUnschedulableIfCredentialsUnchanged(
+		applied, setErr := mutation(
 			ctx,
 			account.ID,
 			account.Credentials,

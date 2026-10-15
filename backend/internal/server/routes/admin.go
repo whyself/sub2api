@@ -60,6 +60,16 @@ func RegisterAdminRoutes(
 
 		// Grok OAuth
 		registerGrokOAuthRoutes(admin, h)
+		if h.Admin.QoderOAuth != nil {
+			credits := admin.Group("/qoder/credits/accounts")
+			credits.GET("", h.Admin.QoderOAuth.CreditsAccounts)
+			credits.GET("/:id", h.Admin.QoderOAuth.AccountCredits)
+			qoder := admin.Group("/qoder/oauth")
+			qoder.POST("/start", h.Admin.QoderOAuth.Begin)
+			qoder.POST("/poll", h.Admin.QoderOAuth.Poll)
+			qoder.POST("/cancel", h.Admin.QoderOAuth.Cancel)
+			qoder.POST("/commit", h.Admin.QoderOAuth.Commit)
+		}
 
 		// 国产供应商（kimi/zhipu/deepseek）额度与余额
 		registerCNProviderRoutes(admin, h)

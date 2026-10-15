@@ -36,6 +36,12 @@
       "litellm_provider": "xai"
     },
     {
+      "id": "qoder",
+      "display_name": "Qoder",
+      "gateway": "openai",
+      "cn_provider": false
+    },
+    {
       "id": "kimi",
       "display_name": "Kimi",
       "gateway": "openai",
@@ -286,6 +292,7 @@
     "openai",
     "antigravity",
     "grok",
+    "qoder",
     "kimi",
     "zhipu",
     "deepseek",

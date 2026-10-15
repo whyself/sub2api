@@ -12,6 +12,7 @@ describe("groupsMessagesDispatch", () => {
   it("supports OpenAI and composite groups", () => {
     expect(supportsMessagesDispatchPlatform("openai")).toBe(true);
     expect(supportsMessagesDispatchPlatform("composite")).toBe(true);
+    expect(supportsMessagesDispatchPlatform("qoder")).toBe(true);
     expect(supportsMessagesDispatchPlatform("anthropic")).toBe(false);
   });
 

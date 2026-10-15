@@ -49,6 +49,7 @@ func NewOAuthHandler(oauthService *service.OAuthService) *OAuthHandler {
 
 // AccountHandler handles admin account management
 type AccountHandler struct {
+	qoderService            *service.QoderService
 	claudeResetCredits      claudeResetReader
 	adminService            service.AdminService
 	oauthService            *service.OAuthService
@@ -1403,6 +1404,13 @@ func (h *AccountHandler) PreviewFromCRS(c *gin.Context) {
 // refreshSingleAccount refreshes credentials for a single OAuth account.
 // Returns (updatedAccount, warning, error) where warning is used for Antigravity ProjectIDMissing scenario.
 func (h *AccountHandler) refreshSingleAccount(ctx context.Context, account *service.Account) (*service.Account, string, error) {
+	if account.IsQoder() {
+		if h.qoderService == nil {
+			return nil, "", fmt.Errorf("Qoder 续期服务未配置")
+		}
+		fresh, err := h.qoderService.CurrentAccount(ctx, account, true)
+		return fresh, "", err
+	}
 	if !account.IsOAuth() {
 		return nil, "", infraerrors.BadRequest("NOT_OAUTH", "cannot refresh non-OAuth account")
 	}
@@ -2805,6 +2813,25 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 	}
 
 	// Handle OpenAI accounts
+	if account.IsQoder() {
+		if h.qoderService == nil {
+			response.Error(c, 503, "Qoder 模型服务未配置")
+			return
+		}
+		catalog, err := h.qoderService.Models(c.Request.Context(), account)
+		if err != nil {
+			qoderAdminError(c, err)
+			return
+		}
+		models := make([]openai.Model, 0, len(catalog))
+		for _, model := range catalog {
+			if model.Enabled {
+				models = append(models, openai.Model{ID: model.ID(), Object: "model", Type: "model", DisplayName: model.DisplayName})
+			}
+		}
+		response.Success(c, models)
+		return
+	}
 	if account.IsOpenAI() {
 		// Prefer the shared, account-keyed upstream catalog. If discovery fails,
 		// retain the legacy local catalog below so the test dialog remains usable.

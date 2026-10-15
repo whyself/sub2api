@@ -5,7 +5,8 @@
     width="normal"
     @close="handleClose"
   >
-    <div v-if="account" class="space-y-4">
+    <QoderOAuthFlow v-if="account?.platform === 'qoder'" :input="{ account_id: account.id, name: account.name }" @completed="handleQoderCompleted" />
+    <div v-if="account && account.platform !== 'qoder'" class="space-y-4">
       <!-- Account Info -->
       <div
         class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-700"
@@ -146,7 +147,7 @@
 
     </div>
 
-    <template #footer>
+    <template v-if="account?.platform !== 'qoder'" #footer>
       <div v-if="account" class="flex justify-between gap-3">
         <button type="button" class="btn btn-secondary" @click="handleClose">
           {{ t('common.cancel') }}
@@ -190,6 +191,7 @@
 </template>
 
 <script setup lang="ts">
+import QoderOAuthFlow from '@/components/account/QoderOAuthFlow.vue'
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
@@ -361,6 +363,8 @@ const resetState = () => {
   grokOAuth.resetState()
   oauthFlowRef.value?.reset()
 }
+
+const handleQoderCompleted = () => { if (props.account) emit('reauthorized', props.account); handleClose() }
 
 const handleClose = () => {
   emit('close')

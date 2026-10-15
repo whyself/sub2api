@@ -1,5 +1,12 @@
 export default {
     accounts: {
+      qoder: {
+        title: 'Qoder 账号授权', description: '在 Qoder 国内版官方页面选择账号。授权完成后会自动保存，并同步可用模型。',
+        starting: '正在生成授权会话…', open: '打开官方授权页', cancel: '取消授权', retry: '重新发起授权',
+        pending: '等待官方授权，完成后此页面会自动继续。', ready: '授权成功，正在保存账号…', completed: '账号已保存。',
+        cancelled: '授权已取消。', expired: '授权会话已过期。', failed: '授权失败，请重新发起。',
+        models: '已同步 {count} 个可用模型', error: 'Qoder 授权失败，请重试。', cancelError: '取消状态尚未确认，请稍后重试。'
+      },
       title: 'Account Management',
       description: 'Manage AI platform accounts and credentials',
       createAccount: 'Create Account',
