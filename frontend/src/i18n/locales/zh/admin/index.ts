@@ -7,7 +7,7 @@ import settings from './settings'
 import audit from './audit'
 import promptAudit from './promptAudit'
 import plugins from './plugins'
-import subscriptionQuota from './subscriptionQuota'
+import qoderUsage from './qoderUsage'
 
 export default {
   ...overview,
@@ -19,5 +19,5 @@ export default {
   ...audit,
   ...promptAudit,
   ...plugins,
-  ...subscriptionQuota,
+  ...qoderUsage,
 }

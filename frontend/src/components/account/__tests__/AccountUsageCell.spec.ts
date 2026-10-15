@@ -113,6 +113,16 @@ const cnUsageCellStubs = {
 }
 
 describe('AccountUsageCell', () => {
+  it('renders native Qoder usage in the shared usage column', () => {
+    const wrapper = mount(AccountUsageCell, {
+      props: { account: makeAccount({ platform: 'qoder', type: 'oauth' }), manualRefreshToken: 7 },
+      global: { stubs: { QoderUsageCell: { name: 'QoderUsageCell', props: ['account', 'manualRefreshToken'], template: '<div data-test="qoder-usage" />' } } }
+    })
+    expect(wrapper.find('[data-test="qoder-usage"]').exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'QoderUsageCell' }).props('manualRefreshToken')).toBe(7)
+    wrapper.unmount()
+  })
+
   beforeEach(() => {
     getUsage.mockReset()
     Object.defineProperty(window, 'matchMedia', {

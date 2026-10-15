@@ -33,11 +33,6 @@ export interface QoderCreditsAccount {
   error?: string
 }
 
-export async function listCreditsAccounts(signal?: AbortSignal): Promise<QoderCreditsAccount[]> {
-  const { data } = await apiClient.get<{ items: QoderCreditsAccount[] }>('/admin/qoder/credits/accounts', { signal })
-  return data.items
-}
-
 export async function getAccountCredits(id: number, refresh = false, signal?: AbortSignal): Promise<QoderCreditsAccount> {
   const { data } = await apiClient.get<QoderCreditsAccount>(`/admin/qoder/credits/accounts/${id}`, {
     params: refresh ? { refresh: 1 } : undefined,

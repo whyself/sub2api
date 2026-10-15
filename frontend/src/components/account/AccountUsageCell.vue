@@ -199,6 +199,12 @@
       </div>
     </template>
 
+    <QoderUsageCell
+      v-else-if="account.platform === 'qoder' && account.type === 'oauth' && !account.parent_account_id"
+      :account="account"
+      :manual-refresh-token="manualRefreshToken"
+    />
+
     <!-- Antigravity OAuth accounts: fetch usage from API -->
     <template v-else-if="account.platform === 'antigravity' && account.type === 'oauth'">
       <!-- 账户类型徽章 -->
@@ -696,6 +702,7 @@ import {
   isMultiProtocolApiKeyPlatform
 } from './credentialsBuilder'
 import OpenCodeGoUsageCell from './OpenCodeGoUsageCell.vue'
+import QoderUsageCell from './QoderUsageCell.vue'
 
 // Module-level cache shared across all AccountUsageCell instances
 const _usageCache = new Map<number, { data: AccountUsageInfo; ts: number }>()
