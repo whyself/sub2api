@@ -135,9 +135,7 @@ func ResolveModel(models []Model, name string) (Model, error) {
 	}
 	for _, m := range models {
 		if norm(name) == norm(m.Key) || norm(name) == norm(m.DisplayName) {
-			if !m.Enabled {
-				return Model{}, &Error{400, "该模型当前未对账号开放"}
-			}
+			// 目录开关与精简 model_config 请求的实际可用性不一致，由聊天接口判定。
 			return m, nil
 		}
 	}
