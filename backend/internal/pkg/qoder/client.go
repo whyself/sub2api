@@ -347,7 +347,7 @@ func SignHeaders(credentials Credentials, path, body string) (http.Header, error
 	date := strconv.FormatInt(time.Now().Unix(), 10)
 	digest := md5.Sum([]byte(strings.Join([]string{payloadB64, cosyKey, date, body, strings.TrimPrefix(path, "/algo")}, "\n")))
 	h := http.Header{"Authorization": {"Bearer COSY." + payloadB64 + "." + hex.EncodeToString(digest[:])}, "Content-Type": {"application/json"}, "Accept": {"text/event-stream"}, "User-Agent": {"QoderProtocolBridge/1.0"}}
-	for k, v := range map[string]string{"cosy-key": cosyKey, "cosy-date": date, "cosy-user": credentials.UserID, "cosy-version": ClientVersion, "cosy-clienttype": "5", "cosy-data-policy": "agree", "cosy-machineid": credentials.MachineID, "cosy-machinetype": credentials.MachineType, "cosy-machinetoken": credentials.MachineToken, "login-version": "v2", "cosy-scene": "assistant", "cosy-business-product": "ide", "cosy-business-type": "agent"} {
+	for k, v := range map[string]string{"cosy-key": cosyKey, "cosy-date": date, "cosy-user": credentials.UserID, "cosy-version": ClientVersion, "cosy-clienttype": "1", "cosy-data-policy": "agree", "cosy-machineid": credentials.MachineID, "cosy-machinetype": credentials.MachineType, "cosy-machinetoken": credentials.MachineToken, "login-version": "v2", "cosy-scene": "assistant", "cosy-business-product": "ide", "cosy-business-type": "agent"} {
 		h.Set(k, v)
 	}
 	return h, nil
@@ -441,7 +441,7 @@ func PrepareChat(raw []byte, model Model) (map[string]any, error) {
 			parameters[name] = value
 		}
 	}
-	result := map[string]any{"stream": true, "model_config": map[string]any{"key": model.Key, "source": "system", "format": "openai"}, "messages": converted, "parameters": parameters}
+	result := map[string]any{"stream": true, "model_config": map[string]any{"key": model.Key, "is_reasoning": false}, "messages": converted, "parameters": parameters}
 	for _, name := range []string{"tools", "tool_choice", "parallel_tool_calls"} {
 		if value := input[name]; value != nil {
 			result[name] = value
