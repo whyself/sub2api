@@ -439,7 +439,7 @@ func PrepareChat(raw []byte, model Model) (map[string]any, error) {
 			parameters[name] = value
 		}
 	}
-	result := map[string]any{"stream": true, "model_config": map[string]any{"key": model.Key, "is_reasoning": false}, "messages": converted, "parameters": parameters}
+	result := map[string]any{"stream": true, "model_config": map[string]any{"key": model.Key, "is_reasoning": true}, "messages": converted, "parameters": parameters}
 	for _, name := range []string{"tools", "tool_choice", "parallel_tool_calls"} {
 		if value := input[name]; value != nil {
 			result[name] = value
